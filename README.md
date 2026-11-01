@@ -1,238 +1,75 @@
-# Linux Server Deployment — Module 2
+Linux, Networking & Cloud Infrastructure — Module 02
+This project documents my hands-on work with Linux, networking, and cloud infrastructure. I used an AWS EC2 Ubuntu server to practise Linux administration, connect to a remote machine, and work through deploying a web server.
+Key Objectives
+- Practise Linux CLI commands, file permissions, users, groups, processes, services, and SSH keys.
+- Understand IP addressing, DNS, ports, firewalls, and AWS Security Groups.
+- Follow the deployment process: create a virtual machine, configure Linux, secure access, deploy a service, and test connectivity.
+Environment
+- Cloud provider: AWS
+- Service: EC2
+- Region: us-east-2 (Ohio)
+- Instance type: t3.micro
+- Operating system: Ubuntu Server 26.04.1 LTS
+- Local machine: Kubuntu
+What I worked on
+1. Linux commands and system information
+I connected to the EC2 server over SSH and used Linux commands to check the current user, hostname, operating-system version, kernel, disk space, memory, and system uptime.
 
-Deploying and securing a Linux server on AWS EC2: from a bare virtual machine to a running, tested, internet-facing service.
-
-**Flow:** Create VM → Configure Linux → Secure Access → Deploy Service → Test Connectivity
-
----
-
-## Linux Fundamentals — Cheat Sheet
-
-### File permissions
-
-```bash
-ls -l                         # View file permissions
-chmod 755 file.sh             # Set rwx for owner, rx for others
-chmod u+x file.sh             # Add execute permission for owner
-chown user:group file.sh      # Change file ownership
-```
-
-Permission digits: 4 = read, 2 = write, 1 = execute.
-
-- 7 = rwx
-- 5 = r-x
-- 4 = r--
-
-### Users & groups
-
-```bash
-sudo adduser deploy           # Create a new user
-sudo usermod -aG sudo deploy  # Add user to sudo group
-groups deploy                 # Check group membership
-id deploy                     # Display user and group IDs
-cat /etc/passwd               # View user accounts
-```
-
-### Process management
-
-```bash
-ps aux                        # List running processes
-top                           # Live process monitor
-kill PID                      # Terminate a process
-systemctl status nginx        # Check service status
-sudo systemctl start nginx    # Start a service
-sudo systemctl stop nginx     # Stop a service
-sudo systemctl restart nginx  # Restart a service
-sudo systemctl enable nginx   # Enable service at boot
-journalctl -u nginx -f        # Follow service logs
-```
-
-### SSH keys
-
-```bash
-ssh-keygen -t ed25519 -C "deploy-key"   # Generate SSH key pair
-
-chmod 400 ~/path/to/aws-key.pem        # Protect AWS private key
-
-ssh -i ~/path/to/aws-key.pem ubuntu@PUBLIC_IP
-```
-
-Never upload private SSH keys (`.pem`) to GitHub.
-
----
-
-## Networking Fundamentals
-
-- **IP addressing / CIDR** — `10.0.0.0/24` represents a network with 256 total IPv4 addresses.
-- **DNS** — A records map domain names to IPv4 addresses; CNAME records create aliases.
-- **Ports** — 22 (SSH), 80 (HTTP), and 443 (HTTPS) are the main ports used in this lab.
-- **Security Groups** — AWS instance-level stateful firewalls that control inbound and outbound traffic.
-- **UFW** — Ubuntu host-level firewall that provides an additional security layer.
-- **Connectivity** — A service must be listening, and every network firewall layer must allow the required traffic.
-
----
-
-## Deployment Log
-
-### 1. Create VM
-
-- Provider: AWS EC2
-- AMI: Ubuntu Server 24.04 LTS
-- Instance type: To be selected based on account eligibility and cost
-- Region: To be selected
-- Storage: Minimum suitable EBS volume
-- Access: SSH key pair
-
-### 2. Configure Linux
-
-```bash
-sudo apt update
-sudo apt upgrade -y
-
+Some of the commands used:
+whoami
+hostname
 hostnamectl
 uname -a
+lsb_release -a
 df -h
 free -h
-
+uptime
+2. Users and permissions
+I practised creating a separate user and adding it to the sudo group, then checking its groups and user ID.
 sudo adduser deploy
 sudo usermod -aG sudo deploy
-
 id deploy
-```
+groups deploy
+I also reviewed common file-permission commands such as ls -l, chmod, and chown.
+3. SSH access
+I connected from Kubuntu to the EC2 Ubuntu server using the EC2 private key.
 
-### 3. Secure Access
+Example command:
+ssh -i ~/.ssh/linux-infrastructure-lab.pem ubuntu@<EC2_PUBLIC_IP>
+The private key stays on my computer and is not included in this repository.
+4. Networking and security
+I reviewed the purpose of IP addresses, CIDR notation, DNS, common ports, and firewall rules.
 
-- Connect to EC2 using the default Ubuntu account and downloaded AWS key.
-- Create a dedicated `deploy` user.
-- Configure SSH key authentication for the new user.
-- Restrict SSH access to the trusted client IP.
+For the EC2 Security Group, the relevant access rules for this lab are:
+Rule	Port	Purpose
+SSH	22	Remote server access; restricted to my IP
+HTTP	80	Web access
 
-Example SSH connection:
 
-```bash
-ssh -i ~/path/to/aws-key.pem ubuntu@PUBLIC_IP
-```
+5. Nginx and connectivity
+I worked with Nginx as the web server and used systemctl to manage Linux services.
 
-After configuring the deploy user's authorized key:
-
-```bash
-ssh deploy@PUBLIC_IP
-```
-
-SSH hardening configuration:
-
-```bash
-sudo nano /etc/ssh/sshd_config
-```
-
-Recommended settings after verifying key-based access:
-
-```text
-PasswordAuthentication no
-PermitRootLogin no
-PubkeyAuthentication yes
-```
-
-Validate the configuration before reloading SSH:
-
-```bash
-sudo sshd -t
-sudo systemctl reload ssh
-```
-
-**AWS Security Group inbound rules:**
-
-- SSH (22): Restricted to My IP.
-- HTTP (80): Open to `0.0.0.0/0` for public web access.
-- HTTPS (443): Only when HTTPS is configured.
-
-### 4. Configure Host Firewall
-
-```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 80/tcp
-sudo ufw enable
-
-sudo ufw status verbose
-```
-
-### 5. Deploy Nginx
-
-```bash
+Commands used for installation and service checks:
+sudo apt update
 sudo apt install nginx -y
-
 sudo systemctl enable nginx
 sudo systemctl start nginx
-
 sudo systemctl status nginx
-```
-
-### 6. Test Connectivity
-
-```bash
-curl localhost
-```
-
-Check the HTTP response:
-
-```bash
+To test the service locally:
 curl -I http://localhost
-```
-
-Test the public server:
-
-```bash
-curl -I http://PUBLIC_IP
-```
-
-Open the following address in a browser:
-
-```text
-http://PUBLIC_IP
-```
-
-Test SSH key-based access:
-
-```bash
-ssh deploy@PUBLIC_IP
-```
-
-Verify that password authentication is disabled only after confirming key-based access works.
-
----
-
-## Results
-
-Evidence will be added after completing the deployment.
-
-| Screenshot | Description | Status |
-|---|---|---|
-| `ec2-instance.png` | AWS EC2 instance details | Pending |
-| `ssh-connection.png` | Successful SSH connection | Pending |
-| `linux-system-info.png` | Linux system information | Pending |
-| `users-permissions.png` | User and permission configuration | Pending |
-| `ufw-status.png` | Host firewall configuration | Pending |
-| `nginx-status.png` | Nginx active and enabled | Pending |
-| `browser-test.png` | Nginx page accessible through browser | Pending |
-
----
-
-## Key Learnings
-
-- Linux user and permission management.
-- The difference between private and public IP addresses.
-- SSH key-based authentication and secure remote access.
-- The difference between AWS Security Groups and Linux UFW.
-- Managing Linux services with `systemctl`.
-- Deploying Nginx and testing HTTP connectivity.
-- Documenting infrastructure deployment with practical evidence.
-- Monitoring AWS resources to avoid unnecessary costs.
-
----
-
-## Project Status
-
-**In Progress** — Deployment and validation evidence will be updated as each lab stage is completed.
-
-**Author:** Amr Mohamed  
-**GitHub:** https://github.com/THEcrOw3000
+To test access from my own computer:
+curl -I http://<EC2_PUBLIC_IP>
+The public test requires Nginx to be running and inbound HTTP traffic on port 80 to be allowed by the EC2 Security Group.
+Screenshots
+Screenshots for the lab are saved in the screenshots/ folder. They should show the actual commands and results from the work, without exposing private keys, passwords, AWS account details, or other sensitive information.
+What I learned
+- Using Linux commands to inspect and manage a server.
+- Creating users and checking group permissions.
+- Connecting to an AWS EC2 instance with SSH.
+- Understanding the role of ports and AWS Security Groups.
+- Managing a service with systemctl.
+- Installing Nginx and checking HTTP connectivity.
+Repository contents
+- docs/ — notes about Linux, networking, SSH, users, and deployment checks.
+- scripts/ — helper scripts used for the lab.
+- screenshots/ — practical evidence from the lab.
