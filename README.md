@@ -180,21 +180,7 @@ Do not upload private keys, passwords, access tokens, or other sensitive informa
 - Connecting to AWS EC2 through SSH.
 - Understanding IP addressing, CIDR, ports, and DNS.
 - Learning how AWS Security Groups control network access.
-- Installing and managing Nginx with `systemctl`.
+- Installing and managing Nginx 
 - Understanding the difference between a running service and one enabled at boot.
 
----
 
-## Repository Structure
-
-```text
-linux-networking-cloud-infrastructure/
-├── docs/
-├── scripts/
-├── screenshots/
-├── .gitignore
-└── README.md
-```
-
-**Author:** Amr Mohamed  
-**GitHub:** [THEcrOw3000](https://github.com/THEcrOw3000)
